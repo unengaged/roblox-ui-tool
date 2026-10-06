@@ -27,11 +27,13 @@ static int g_show = SW_SHOW;
 static std::map<W, fs::path> g_src;  // target id -> file the user picked
 
 static const std::vector<W> kEmote = { L"SegmentedCircle.png", L"SegmentedCircle@2x.png", L"SegmentedCircle@3x.png" };
-static const std::vector<W> kPlayer = { L"NewAvatarBackground.png" };
-static const std::vector<W> kCursor = { L"ArrowCursor.png", L"ArrowFarCursor.png" };
+static const std::vector<W> kPlayer = { L"NewAvatarBackground.png", L"NewAvatarBackground@2x.png", L"NewAvatarBackground@3x.png" };
+static const std::vector<W> kCursor = { L"ArrowCursor.png", L"ArrowFarCursor.png", L"IBeamCursor.png" };
+static const std::vector<W> kCursorShift = { L"MouseLockedCursor.png"};
 static const wchar_t* kEmoteRel = L"content\\textures\\ui\\Emotes\\Large";
 static const wchar_t* kPlayerRel = L"content\\textures\\ui\\PlayerList";
 static const wchar_t* kCursorRel = L"content\\textures\\Cursors\\KeyboardMouse";
+static const wchar_t* kCursorShiftRel = L"content\\textures";
 
 static fs::path LAD() {
     static fs::path p = [] { PWSTR s = nullptr; fs::path r;
@@ -122,27 +124,54 @@ static void LoadCfg() {
     }
 }
 
-static bool Cursor(const fs::path& zip, const fs::path& dir, W& err) {
+static bool Cursor(const fs::path& zip, const fs::path& dir, const fs::path& shiftDir, W& err) {
     std::error_code ec;
     fs::path tmp = fs::temp_directory_path() / (L"lue_cursor_" + std::to_wstring(GetCurrentProcessId()));
     fs::create_directories(tmp, ec);
-    W cmd = L"tar.exe -xf \"" + zip.wstring() + L"\" -C \"" + tmp.wstring() + L"\"";  // bsdtar, Win10 1803+ (surely they are on new than this winver)
+
+    W cmd = L"tar.exe -xf \"" + zip.wstring() + L"\" -C \"" + tmp.wstring() + L"\"";
     STARTUPINFOW si{ sizeof si }; PROCESS_INFORMATION pi{}; DWORD code = 1;
+
     if (CreateProcessW(nullptr, cmd.data(), nullptr, nullptr, FALSE, CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi)) {
-        WaitForSingleObject(pi.hProcess, 30000); GetExitCodeProcess(pi.hProcess, &code);
-        CloseHandle(pi.hProcess); CloseHandle(pi.hThread);
+        WaitForSingleObject(pi.hProcess, 30000);
+        GetExitCodeProcess(pi.hProcess, &code);
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
     }
+
     bool ok = code == 0;
     if (!ok) err = L"failed to extract cursor zip";
-    for (size_t i = 0; ok && i < kCursor.size(); i++) {
-        fs::path f;
-        for (auto& e : fs::recursive_directory_iterator(tmp, ec))
-            if (e.is_regular_file() && _wcsicmp(e.path().filename().c_str(), kCursor[i].c_str()) == 0) { f = e.path(); break; }
-        if (f.empty()) { err = kCursor[i] + L" not in zip"; ok = false; }
-        else if (!IsPng(f)) { err = kCursor[i] + L" in zip is not a valid PNG"; ok = false; }
-        else ok = Replace(f, dir, kCursor[i], err);
+
+    if (ok) {
+        for (auto& names : { std::pair{ &kCursor, &dir }, std::pair{ &kCursorShift, &shiftDir } }) {
+            for (auto& name : *names.first) {
+                fs::path f;
+
+                for (auto& e : fs::recursive_directory_iterator(tmp, ec))
+                    if (e.is_regular_file() && _wcsicmp(e.path().filename().c_str(), name.c_str()) == 0) {
+                        f = e.path();
+                        break;
+                    }
+
+                if (f.empty())
+                    continue; // not in zip, skip it
+
+                if (!IsPng(f)) {
+                    err = name + L" in zip is not a valid PNG";
+                    ok = false;
+                    break;
+                }
+
+                if (!Replace(f, *names.second, name, err)) {
+                    ok = false;
+                    break;
+                }
+            }
+            if (!ok) break;
+        }
     }
-    fs::remove_all(tmp, ec);  // always clean up
+
+    fs::remove_all(tmp, ec);
     return ok;
 }
 
@@ -154,11 +183,12 @@ static W Run(bool blox, const std::vector<W>& targets) {
         if (t != L"emote" && t != L"player" && t != L"cursor") continue;
         if (!g_src.count(t)) return L"err|choose a file for " + t + L" first";
         bool ok;
-        if (t == L"cursor") ok = Cursor(g_src[t], root / kCursorRel, err);
+        if (t == L"cursor") ok = Cursor(g_src[t], root / kCursorRel, root / kCursorShiftRel, err);
         else {
             auto& names = t == L"emote" ? kEmote : kPlayer;
             ok = true;
-            for (size_t i = 0; ok && i < names.size(); i++) ok = Replace(g_src[t], root / (t == L"emote" ? kEmoteRel : kPlayerRel), names[i], err);
+            for (size_t i = 0; ok && i < names.size(); i++)
+                ok = Replace(g_src[t], root / (t == L"emote" ? kEmoteRel : kPlayerRel), names[i], err);
         }
         if (!ok) return L"err|" + t + L" failed: " + err;
         done += (done.empty() ? L"" : L", ") + t;

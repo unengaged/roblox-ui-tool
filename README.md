@@ -22,7 +22,7 @@ A small Windows app for swapping Roblox UI textures (emotes, player list and cur
 2. **Click the name** of what you want to change (**emote**, **player list** or **cursor**) to open its upload panel.
 3. In the panel, **click the upload box** and choose your file.
    - Emote and player list: a **PNG** image.
-   - Cursor: a **ZIP** file containing `ArrowCursor.png` and `ArrowFarCursor.png`.
+   - Cursor: a **ZIP** file containing `ArrowCursor.png` `ArrowFarCursor.png` and `IBeamCursor.png`.
 4. The file name appears in the box. Click **save** to close the panel, or **remove** to clear your choice.
 5. **Tick the checkbox** next to every item you want to replace.
 6. Click **replace texture**.
@@ -45,7 +45,6 @@ Repeat for the other items as needed. Your chosen files stay selected between se
 | *choose a file first* | Click the item's name, upload a file, then try again. |
 | *not a valid PNG* | The file isn't a real PNG. Export it again as PNG from your image editor. |
 | *file in use* | Close Roblox completely and try again. |
-| *not in zip* | Your cursor ZIP must contain `ArrowCursor.png` and `ArrowFarCursor.png`. |
 
 ## Requirements
 
