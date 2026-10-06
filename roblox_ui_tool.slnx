@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="roblox_ui_tool.vcxproj" />
+  <Project Path="roblox_ui_tool.vcxproj" Id="c280bd5c-edca-4c61-b79d-6bda694f22fd" />
 </Solution>
