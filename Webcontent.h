@@ -1,5 +1,6 @@
 #pragma once
-static const char kIndexHtml[] = R"HTML(<!DOCTYPE html>
+static const char kIndexHtml[] = R"HTML(
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -21,7 +22,7 @@ static const char kIndexHtml[] = R"HTML(<!DOCTYPE html>
   --line:4px;
   --ui-scale:0.75;
 
-  --frame:url('https://file.garden/ZjCpntlBORniyXDK/border.png');
+  --frame:url('border.png');
   --frame-slice:33%;
   --frame-width:64px;
   --frame-gap:30px;
@@ -36,7 +37,7 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{
   margin:0; background:var(--black); color:#fff;
   font-family:'Angel Bunny',ui-rounded,'SF Pro Rounded','Nunito','Segoe UI',system-ui,sans-serif;
-  min-height:100vh; display:flex; flex-direction:column; align-items:center; gap:18px; padding:20px 14px 28px;
+  min-height:100vh; display:flex; flex-direction:column; align-items:center; gap:18px; padding:50px 14px 28px;
 }
 .shell{width:100%; max-width:520px; background:var(--black); color:var(--white); border-radius:44px; padding:22px 20px 24px}
 .app{width:100%; display:flex; flex-direction:column; gap:16px}
@@ -54,6 +55,35 @@ h1{
   50%{transform:scale(1)}
   to{transform:scale(.98)}
 }
+.topbar{
+  position:fixed;
+  top:8px;
+  right:8px;
+  z-index:1000;
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:4px;
+  margin:0;
+  width:auto;
+}
+.topbutton{
+  border:0;
+  margin:0;
+  padding:2px 6px;
+  line-height:1;
+  font-size:clamp(34px,8.5vw,48px);
+  letter-spacing:.01em;
+  background:linear-gradient(to bottom,var(--black) 40%,var(--white));
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+  -webkit-text-fill-color:transparent;
+  -webkit-text-stroke:2px var(--white);
+  transition:transform .1s;
+}
+.topbutton:hover{transform:scale(1.08)}
+.topbutton:active{transform:scale(.94)}
 .panel{
   border:var(--line) solid var(--black); border-radius:var(--radius-sm);
   --fill:var(--white); padding:16px;
@@ -164,7 +194,7 @@ input[type=file]{display:none}
 }
 .replace{position:relative}
 .bow{position:absolute; top:-6px; right:-8px; width:64px; height:auto; transform:translate(25%,-35%) rotate(30deg); pointer-events:none}
-.shell,.foot,#dialogs{zoom:var(--ui-scale)}
+.shell,.foot,#dialogs,.topbar{zoom:var(--ui-scale)}
 
 .topper,.bow,.divider{
   animation-name:floating;
@@ -180,6 +210,10 @@ input[type=file]{display:none}
 </style>
 </head>
 <body>
+<div class="topbar">
+  <button class="topbutton" id="t-dash" aria-label="dash">–</button>
+  <button class="topbutton" id="t-x" aria-label="x">x</button>
+</div>
 <div class="shell">
 <main class="app">
   <h1>lue's ui modder <span class="heart">♡</span></h1>
@@ -203,7 +237,7 @@ input[type=file]{display:none}
   <button class="replace" id="replace">replace texture<img class="bow" src="bow.gif" alt=""></button>
 </main>
 </div>
-<footer class="foot">discord.gg/GmQ9HMy2ZE</footer>
+<footer class="foot">discord.gg/KbwBZcCVcY</footer>
 
 <div id="dialogs"></div>
 
@@ -256,8 +290,25 @@ TARGETS.forEach(t => {
 const modes = ['#m-vanilla','#m-bloxstrap'].map($);
 modes.forEach(b => b.addEventListener('click', () => modes.forEach(m => m.setAttribute('aria-pressed', m === b))));
 
+document.body.addEventListener('pointerdown', e => {
+  if (e.button !== 0) return;
+
+  // Only drag the actual black background.
+  if (e.target !== document.body) return;
+
+  window.chrome.webview.postMessage('window-drag');
+});
+
+document.getElementById('t-dash').addEventListener('click', () => {
+  window.chrome.webview.postMessage('window-minimize');
+});
+
+document.getElementById('t-x').addEventListener('click', () => {
+  window.chrome.webview.postMessage('window-close');
+});
 </script>
 
 </body>
-</html>)HTML";
+</html>
+)HTML";
 static const size_t kIndexHtmlSize = sizeof(kIndexHtml) - 1;

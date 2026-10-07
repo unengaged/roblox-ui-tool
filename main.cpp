@@ -272,6 +272,23 @@ static std::vector<W> Split(const W& s, wchar_t c) {
     return v;
 }
 static void OnMessage(const W& m) {
+
+    if (m == L"window-minimize") {
+        ShowWindow(g_hwnd, SW_MINIMIZE);
+        return;
+    }
+
+    if (m == L"window-close") {
+        TerminateProcess(reinterpret_cast<HANDLE>(-1), 0);
+        return;
+    }
+
+    if (m == L"window-drag") {
+        ReleaseCapture();
+        SendMessageW(g_hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
+        return;
+    }
+
     auto p = Split(m, L'|');
     if (!p.empty() && p[0] == L"ready") {  // page loaded: show remembered files
         for (auto& kv : g_src) g_view->PostWebMessageAsString((L"file|" + kv.first + L"|" + kv.second.filename().wstring()).c_str());
@@ -321,7 +338,7 @@ int WINAPI wWinMain(HINSTANCE hi, HINSTANCE, PWSTR, int show) { // dear god this
     RECT wa; SystemParametersInfoW(SPI_GETWORKAREA, 0, &wa, 0);
     const int kWinW = 520, kWinH = 700;
 
-    g_hwnd = CreateWindowW(wc.lpszClassName, L"lue's ui modder", WS_OVERLAPPEDWINDOW,
+    g_hwnd = CreateWindowW(wc.lpszClassName, L"lue's ui modder", WS_POPUP,
         wa.left + (wa.right - wa.left - kWinW) / 2, wa.top + (wa.bottom - wa.top - kWinH) / 2,
         kWinW, kWinH, nullptr, nullptr, hi, nullptr);
 

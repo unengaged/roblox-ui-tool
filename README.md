@@ -53,4 +53,4 @@ Repeat for the other items as needed. Your chosen files stay selected between se
 
 ## Support
 
-Questions or feedback? Join the Discord: **discord.gg/GmQ9HMy2ZE**
+Questions or feedback? Join the Discord: **https://discord.gg/KbwBZcCVcY**
