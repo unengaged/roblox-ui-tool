@@ -237,7 +237,7 @@ input[type=file]{display:none}
   <button class="replace" id="replace">replace texture<img class="bow" src="bow.gif" alt=""></button>
 </main>
 </div>
-<footer class="foot">discord.gg/KbwBZcCVcY</footer>
+<footer id="disc-invite" class="foot">discord.gg/KbwBZcCVcY</footer>
 
 <div id="dialogs"></div>
 
@@ -305,6 +305,10 @@ document.getElementById('t-dash').addEventListener('click', () => {
 
 document.getElementById('t-x').addEventListener('click', () => {
   window.chrome.webview.postMessage('window-close');
+});
+
+document.getElementById('disc-invite').addEventListener('click', () => {
+  window.chrome.webview.postMessage('discord-click');
 });
 </script>
 

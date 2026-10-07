@@ -11,7 +11,11 @@
 #include <map>
 #include <sstream>
 #include <vector>
+#include <winhttp.h>
+#include <print>
 #include "webcontent.h"
+
+#pragma comment(lib, "Winhttp.lib")
 #pragma comment(lib, "Shlwapi.lib")
 #pragma comment(lib, "Comdlg32.lib")
 
@@ -19,6 +23,7 @@ using namespace Microsoft::WRL;
 namespace fs = std::filesystem;
 using W = std::wstring;
 
+static const std::string version = "v1.3";
 static ComPtr<ICoreWebView2Controller> g_ctrl;
 static ComPtr<ICoreWebView2> g_view;
 static ComPtr<ICoreWebView2Environment> g_env;
@@ -34,6 +39,32 @@ static const wchar_t* kEmoteRel = L"content\\textures\\ui\\Emotes\\Large";
 static const wchar_t* kPlayerRel = L"content\\textures\\ui\\PlayerList";
 static const wchar_t* kCursorRel = L"content\\textures\\Cursors\\KeyboardMouse";
 static const wchar_t* kCursorShiftRel = L"content\\textures";
+
+
+static std::string getVersion()
+{
+    HINTERNET s = WinHttpOpen(L"VersionChecker", 0, 0, 0, 0);
+    HINTERNET c = WinHttpConnect(s, L"raw.githubusercontent.com", 443, 0);
+    HINTERNET r = WinHttpOpenRequest(c, L"GET",
+        L"/unengaged/roblox-ui-tool/refs/heads/main/version", 0, 0, 0, WINHTTP_FLAG_SECURE);
+
+    WinHttpSendRequest(r, 0, 0, 0, 0, 0, 0);
+    WinHttpReceiveResponse(r, 0);
+
+    char buf[64]{};
+    DWORD n;
+    WinHttpReadData(r, buf, sizeof(buf) - 1, &n);
+
+#ifdef _DEBUG
+    std::println("[!] response from git: {}", buf);
+#endif
+
+    WinHttpCloseHandle(r);
+    WinHttpCloseHandle(c);
+    WinHttpCloseHandle(s);
+
+    return { buf, n };
+}
 
 static fs::path LAD() {
     static fs::path p = [] { PWSTR s = nullptr; fs::path r;
@@ -289,6 +320,13 @@ static void OnMessage(const W& m) {
         return;
     }
 
+    if (m == L"discord-click") {
+        ShellExecuteA(0, "open",
+        "https://discord.gg/KbwBZcCVcY",
+        0, 0, SW_SHOWNORMAL);
+        return;
+    }
+
     auto p = Split(m, L'|');
     if (!p.empty() && p[0] == L"ready") {  // page loaded: show remembered files
         for (auto& kv : g_src) g_view->PostWebMessageAsString((L"file|" + kv.first + L"|" + kv.second.filename().wstring()).c_str());
@@ -320,6 +358,32 @@ typedef HRESULT(STDAPICALLTYPE* CreateEnvFn)(PCWSTR, PCWSTR, ICoreWebView2Enviro
 static void Fail(const wchar_t* m) { MessageBoxW(nullptr, m, L"lue's ui modder", MB_ICONERROR); PostQuitMessage(1); }
 
 int WINAPI wWinMain(HINSTANCE hi, HINSTANCE, PWSTR, int show) { // dear god this entire function is visual clutter
+
+#ifdef _DEBUG
+    AllocConsole();
+    SetConsoleTitleA("debug console");
+    FILE* fp;
+    freopen_s(&fp, "CONOUT$", "w", stdout);
+#endif
+
+    std::string v = getVersion();
+
+    while (!v.empty() && isspace((unsigned char)v.back()))
+        v.pop_back();
+
+    if (v != version)
+    {
+        if (MessageBoxA(0,
+            "Update available!\n\nWould you like to open the download page now?",
+            "Update Available",
+            MB_YESNO | MB_ICONINFORMATION) == IDYES)
+        {
+            ShellExecuteA(0, "open",
+            "https://github.com/unengaged/roblox-ui-tool/releases",
+            0, 0, SW_SHOWNORMAL);
+        }
+    }
+
     g_show = show;
     CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     // Start the (slow) WebView2 startup first; the window stays hidden until the page has loaded
