@@ -45,8 +45,23 @@ static std::string getVersion()
 {
     HINTERNET s = WinHttpOpen(L"VersionChecker", 0, 0, 0, 0);
     HINTERNET c = WinHttpConnect(s, L"raw.githubusercontent.com", 443, 0);
+
+    std::wstring path =
+        L"/unengaged/roblox-ui-tool/refs/heads/main/version?t=" +
+        std::to_wstring(
+            std::chrono::system_clock::now().time_since_epoch().count()
+        );
+
     HINTERNET r = WinHttpOpenRequest(c, L"GET",
-        L"/unengaged/roblox-ui-tool/refs/heads/main/version", 0, 0, 0, WINHTTP_FLAG_SECURE);
+        path.c_str(), 0, 0, 0, WINHTTP_FLAG_SECURE);
+
+    WinHttpAddRequestHeaders(
+        r,
+        L"Cache-Control: no-cache\r\n"
+        L"Pragma: no-cache\r\n",
+        -1L,
+        WINHTTP_ADDREQ_FLAG_ADD
+    );
 
     WinHttpSendRequest(r, 0, 0, 0, 0, 0, 0);
     WinHttpReceiveResponse(r, 0);
