@@ -23,7 +23,7 @@ using namespace Microsoft::WRL;
 namespace fs = std::filesystem;
 using W = std::wstring;
 
-static const std::string version = "v1.3";
+static const std::string version = "v1.4";
 static ComPtr<ICoreWebView2Controller> g_ctrl;
 static ComPtr<ICoreWebView2> g_view;
 static ComPtr<ICoreWebView2Environment> g_env;
@@ -56,7 +56,7 @@ static std::string getVersion()
     WinHttpReadData(r, buf, sizeof(buf) - 1, &n);
 
 #ifdef _DEBUG
-    std::println("[!] response from git: {}", buf);
+    std::println("[!] response from github: {}", buf);
 #endif
 
     WinHttpCloseHandle(r);
@@ -92,7 +92,30 @@ static bool Root(bool blox, fs::path& out, W& err) {
     std::error_code ec;
     fs::path base = LAD() / (blox ? L"Bloxstrap" : L"Roblox\\Versions");
     if (!fs::is_directory(base, ec)) { err = Pretty(base) + L" not found"; return false; }
-    if (blox) { out = base / L"Modifications"; return true; }
+    if (blox)
+    {
+        out = base / L"Modifications";
+
+        const wchar_t* folders[] = {
+            kEmoteRel,
+            kPlayerRel,
+            kCursorRel
+        };
+
+        for (const auto* folder : folders)
+        {
+            std::error_code ec;
+            fs::create_directories(out / folder, ec);
+
+            if (ec)
+            {
+                err = L"cannot create " + Pretty(out / folder);
+                return false;
+            }
+        }
+
+        return true;
+    }
     fs::file_time_type best{}; bool found = false;
     for (auto& d : fs::directory_iterator(base, ec)) {
         auto exe = d.path() / L"RobloxPlayerBeta.exe";
